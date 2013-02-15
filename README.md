@@ -15,11 +15,11 @@ At the moment packages are only for arch x86_64. In alternative there are the so
 
 *How to use*
 --------------
-Download the python script "zrepo".
-Move this script to /usr/local/bin
-Run as root: zrepo init
-Update yum: yum update
-See the available packages: yum --disablerepo="*" --enablerepo="zrepo" list available
+- Download the python script "zrepo".
+- Move this script to /usr/local/bin
+- Run as root: zrepo init
+- Update yum: yum update
+- See the available packages: yum --disablerepo="*" --enablerepo="zrepo" list available
 
 enjoy
 
