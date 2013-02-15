@@ -10,6 +10,7 @@ Suittable for Fedora
 
 *Supported Distribution*
 --------------
+At the moment packages are only for arch x86_64. In alternative there are the source packages. 
 
 - Fedora 18
 
