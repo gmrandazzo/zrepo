@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+#
+# zrepo - An other third party repository
+#
+# Python Script to update/remove the repository
+#
+#   This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# 
+# zrepo was writen by Giuseppe Marco Randazzo aka zeld    gmrandazzo@gmail.com
+#
+#
+
+import os
+import shutil
+import sys
+import subprocess
+import glob
+
+#ENV Variables
+# Pay attention when you change these variables...
+gitbin = "/usr/bin/git"
+workdir = "/var/lib/"
+reponame = "zrepo"
+gitrepo = "https://github.com/zeld/zrepo"
+
+minor = 0
+major = 1
+patch = 0
+
+def ZVersion():
+  print("\nzrepo version:  %d.%d.%d\n" % (minor, major, patch))
+
+def ZWriteRepo():
+  f = open("/etc/yum.repos.d/zrepo.repo", "w")
+  f.write("[zrepo]\n")
+  f.write("name=zrepo Repository\n")
+  f.write("baseurl=file:///var/lib/zrepo/$releasever/$basearch\n")
+  f.write("gpgcheck=0\n")
+  f.write("enabled=1\n")
+  f.close()
+  return True
+  
+def ZInit():
+  if os.getuid() == 0:
+    if os.path.exists(gitbin) == True:
+      if os.path.exists(workdir+reponame) == False:
+        print("Starting cloning git repository")
+        cmd = (('%s clone %s %s') % (gitbin, gitrepo, workdir+reponame))
+        if subprocess.call([cmd], shell = True) == 0:
+          os.chmod(workdir+reponame, 0777)
+          if ZWriteRepo() == True:
+            return True
+          else:
+            print("Error!! Unable to write into /etc/yum.repos.d contact the server administrator!")
+            return False
+        else:
+          print("Error!! Unable to contact the server!")
+          return False
+      else:
+        print("Error!! The repository already exist in \"%s\"" % (workdir+reponame))
+        return False
+    else:
+      print("Error!! Unable to find git at %s" % (gitbin))
+      return False
+  else:
+    print("Please run zrepo as root.")
+    return False
+  
+def ZUpdate():
+  if os.getuid() == 0:
+    if os.path.exists(gitbin) == True:
+      print("Updating zrepo...")
+      returntopath = os.getcwd()
+      os.chdir(workdir+reponame)
+      cmd = (('%s remote update') % (gitbin))
+      if subprocess.call([cmd], shell = True) == 0:
+        os.chdir(returntopath)
+        print("Done.")
+        return True
+      else:
+        print("Error!! Unable to contacth the server!")
+        os.chdir(returntopath)
+        return False
+    else:
+      print("Error!! Unable to find git at %s" % (gitbin))
+      return False
+  else:
+    print("Please run zrepo as root.")
+    return False 
+
+def ZRemove():
+  if os.getuid() == 0:
+    if os.path.exists(workdir+reponame):
+      print("Removing zrepo from %s" % (workdir+reponame))
+      shutil.rmtree(workdir+reponame)
+      os.remove("/etc/yum.repos.d/zrepo.repo")
+      print("Done.")
+      return True
+    else:
+      print("zrepo is not installed.")
+      return False
+  else:
+    print("Please run zrepo as root.")
+    return False
+
+def main():
+  if len(sys.argv) < 2:
+    print("Usage: zrepo COMMAND")
+    print("\nList of Commands:\n")
+    print("\tinit      Download and init the repository")
+    print("\tupdate    Update the repository")
+    print("\tremove    Remove the repository")
+    ZVersion()
+  else:
+    if os.getuid() == 0:
+      if sys.argv[1] == "init":
+        ZInit()
+      elif sys.argv[1] == "update":
+        ZUpdate()
+      elif sys.argv[1] == "remove":
+        ZRemove()
+      else:
+        print("No such command: %s." % (sys.argv[1]))
+    else:
+      print("Please run zrepo as root.")
+
+if __name__ == "__main__":
+  main()
